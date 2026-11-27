@@ -14,10 +14,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
+      - name: Qualidade e tipos
+        run: |
+          npm run lint
+          npm run typecheck
+      - name: Testes e cobertura
+        run: npm run coverage
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cobertura
+          path: coverage/
+          if-no-files-found: error
+      - name: Auditoria de dependências
+        run: npm audit --audit-level=high
+      - name: SAST com Semgrep
+        run: >-
+          docker run --rm -v "$PWD:/src:ro" -w /src
+          semgrep/semgrep@sha256:0c8dfa7aa1ca8c50233ec9110e8cd88d139dedd603d56507493f74c6f4b3e062
+          semgrep scan --config .semgrep.yml --error --strict --metrics=off src
+      - name: Histórico Git com Gitleaks
+        run: >-
+          docker run --rm -v "$PWD:/repo:ro"
+          -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/repo
+          ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --redact --log-opts=--all
       - run: npm run build
