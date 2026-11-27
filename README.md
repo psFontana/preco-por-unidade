@@ -23,3 +23,9 @@ O módulo de cálculo normaliza quantidades e compara produtos cruzados com inte
 
 O [primeiro build](https://github.com/psFontana/preco-por-unidade/actions/runs/45944634989) validou a estrutura da SPA. No [PR do comparador](https://github.com/psFontana/preco-por-unidade/pull/2), o [teste de conversão falhou](https://github.com/psFontana/preco-por-unidade/actions/runs/45944764294) ao comparar unidades diferentes. A [execução seguinte](https://github.com/psFontana/preco-por-unidade/actions/runs/45944939940) aprovou a correção.
 
+
+## Qualidade e segurança
+
+O ESLint e o TypeScript verificam o código antes da compilação. O Vitest coleta linhas e ramificações de `src/comparison.ts` com o provedor V8. O limite é 80% em cada métrica. O relatório HTML fica em `coverage/` e no artefato `cobertura` da execução.
+
+O pipeline verifica vulnerabilidades altas ou críticas nas dependências de produção e desenvolvimento com `npm audit`. O Semgrep aplica as regras versionadas para inserção direta de HTML e avaliação de código em JavaScript/TypeScript. O Gitleaks percorre o histórico do Git com os valores sensíveis ocultos no log. Um achado nas regras selecionadas ou uma falha nos verificadores bloqueia o build. As Actions são referenciadas por SHA, e as imagens dos scanners por digest. A aplicação não usa chaves de API.

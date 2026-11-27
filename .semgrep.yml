@@ -1,0 +1,16 @@
+rules:
+  - id: html-direto-no-dom
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: A escrita de HTML cru dispensa o escape de texto aplicado pelo React.
+    pattern-either:
+      - pattern: $ELEMENT.innerHTML = $VALUE
+      - pattern: $ELEMENT.outerHTML = $VALUE
+      - pattern: <$TAG ... dangerouslySetInnerHTML={$PROP} ... />
+  - id: execucao-dinamica
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: A avaliação de strings como código amplia as possibilidades de injeção.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
