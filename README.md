@@ -37,3 +37,16 @@ O GitHub Actions gera `dist/` com o HTML, JavaScript, CSS e fontes. Os caminhos 
 O [monitoramento](https://github.com/psFontana/preco-por-unidade/actions/workflows/monitor.yml) roda após o deploy e também de forma independente a cada seis horas, aos 31 minutos das 05h, 11h, 17h e 23h UTC. A execução manual usa o mesmo teste Playwright. O Chromium abre a URL pública, exige HTTP 200, limpa o formulário e preenche o exemplo de 500 g e 1 kg. A verificação falha quando a página fica inacessível ou devolve um resultado incorreto, mesmo que o servidor responda HTTP 200. O log, a captura de tela e o trace permitem investigar as falhas.
 
 Na reprodução local, `npm run preview` serve o build em outra janela. Com o navegador instalado por `npx playwright install chromium`, `npm run monitor` usa essa URL local. A variável pública `SITE_URL` seleciona outro endereço.
+
+## Imagem Docker
+
+O Nginx serve os arquivos de `dist/` na porta 8080 como usuário sem privilégios. A imagem base é fixada por digest. O build local usa o mesmo diretório da publicação estática.
+
+```sh
+npm ci
+npm run build
+docker build -t preco-por-unidade:local .
+docker run --rm -p 8080:8080 preco-por-unidade:local
+```
+
+O site do contêiner fica em `http://localhost:8080/`. No Actions, o Playwright testa a imagem em execução. Para tags de versão da `main`, a etapa seguinte recupera a imagem testada e a publica no GitHub Container Registry com a mesma tag. Somente esse job recebe permissão de escrita em pacotes. O comando para a versão de entrega é `docker run --rm -p 8080:8080 ghcr.io/psfontana/preco-por-unidade:v1.0.0`.
