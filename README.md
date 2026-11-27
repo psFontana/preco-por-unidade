@@ -14,3 +14,12 @@ npm run dev
 ```
 
 O comando `npm run build` verifica os tipos e gera o site estático em `dist/`. O GitHub Actions executa a instalação e o build em pull requests para `main` e a cada atualização dessa branch.
+
+## Comparação de embalagens
+
+A interface aceita gramas, quilos, mililitros, litros e contagem por unidade. O resultado muda a cada edição. No exemplo inicial, 500 g por R$ 8,00 correspondem a R$ 16,00/kg. A embalagem de 1 kg por R$ 15,00 oferece economia de 6,25% por quilo.
+
+O módulo de cálculo normaliza quantidades e compara produtos cruzados com inteiros. O arredondamento em reais ocorre na apresentação. Os testes de regra e de interface rodam com `npm test`.
+
+O [primeiro build](https://github.com/psFontana/preco-por-unidade/actions/runs/45944634989) validou a estrutura da SPA. No [PR do comparador](https://github.com/psFontana/preco-por-unidade/pull/2), o [teste de conversão falhou](https://github.com/psFontana/preco-por-unidade/actions/runs/45944764294) ao comparar unidades diferentes. A [execução seguinte](https://github.com/psFontana/preco-por-unidade/actions/runs/45944939940) aprovou a correção.
+
