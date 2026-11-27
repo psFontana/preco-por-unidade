@@ -38,7 +38,7 @@ export function compare(a: PackageInput, b: PackageInput): Comparison {
   if (first.error !== undefined) return { ok: false, message: first.error }
   const second = readPackage(b, 'B')
   if (second.error !== undefined) return { ok: false, message: second.error }
-  if (a.unit !== b.unit) {
+  if (units[a.unit].base !== units[b.unit].base) {
     return { ok: false, message: 'As embalagens precisam usar medidas compatíveis.' }
   }
 
