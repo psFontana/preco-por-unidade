@@ -1,46 +1,71 @@
 # Preço por unidade
 
-Comparador de embalagens para compras de supermercado. A aplicação calcula o preço por quilo, litro ou unidade para que embalagens de tamanhos diferentes possam ser comparadas.
+Uma embalagem de 500 g por R$ 8,00 ou outra de 1 kg por R$ 15,00? O comparador mostra o preço na mesma unidade de medida. Nesse exemplo, os preços são R$ 16,00/kg e R$ 15,00/kg. A segunda opção economiza 6,25% por quilo.
 
-Trabalho prático da disciplina de Integração Contínua da UTFPR. A branch `main` reúne as entregas estáveis. Cada etapa do projeto passa por uma branch curta e um pull request, com o histórico das verificações associado ao commit.
+Trabalho prático de Integração Contínua da UTFPR. [Aplicação publicada](https://psfontana.github.io/preco-por-unidade/) · [Roteiro da apresentação](docs/apresentacao.md)
 
-## Desenvolvimento local
+## Aplicação
 
-O projeto usa React, TypeScript e Vite. Com Node.js 22.12 ou superior, a instalação e o servidor de desenvolvimento são iniciados pelos comandos abaixo.
+A SPA compara massa (g e kg), volume (mL e L) ou contagem (un). Os valores podem usar vírgula ou ponto decimal. O resultado acompanha a edição, indica empates e identifica campos vazios, valores inválidos e medidas incompatíveis. O formulário começa com o exemplo acima e permite limpar os dois campos de preço e quantidade.
+
+A interface foi construída com React e TypeScript. O formulário mantém os dados em memória e chama o módulo de cálculo a cada alteração. O módulo normaliza as quantidades e compara os preços por produtos cruzados com inteiros. A economia percentual toma a opção mais cara como referência. O arredondamento em reais ocorre na exibição. A aplicação e as fontes são estáticas, e nenhum dado da compra é enviado a um servidor.
+
+## Desenvolvimento
+
+O ambiente de referência usa Node.js 22 (a partir de 22.13), npm e o lockfile versionado.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-O comando `npm run build` verifica os tipos e gera o site estático em `dist/`. O GitHub Actions executa a instalação e o build em pull requests para `main` e a cada atualização dessa branch.
+| Comando | Resultado |
+| --- | --- |
+| `npm run lint` | ESLint no código da aplicação, testes e configuração |
+| `npm run typecheck` | Verificação estática de tipos pelo TypeScript |
+| `npm test` | Testes de cálculo e interação da interface com Vitest |
+| `npm run coverage` | Cobertura do módulo de cálculo e relatório em `coverage/` |
+| `npm run build` | Verificação de tipos e build de produção em `dist/` |
+| `npm run preview` | Servidor local do build para conferência no navegador |
 
-## Comparação de embalagens
+## Git e pipeline
 
-A interface aceita gramas, quilos, mililitros, litros e contagem por unidade. O resultado muda a cada edição. No exemplo inicial, 500 g por R$ 8,00 correspondem a R$ 16,00/kg. A embalagem de 1 kg por R$ 15,00 oferece economia de 6,25% por quilo.
+A `main` recebe mudanças por pull request. Branches curtas separam funcionalidade, integração, publicação e documentação. O check obrigatório **Build** precisa passar antes do merge. Os commits das branches ficam preservados no histórico. A tag `v1.0.0` identifica a entrega e a imagem de contêiner correspondente.
 
-O módulo de cálculo normaliza quantidades e compara produtos cruzados com inteiros. O arredondamento em reais ocorre na apresentação. Os testes de regra e de interface rodam com `npm test`.
+O [workflow de integração](.github/workflows/ci.yml) roda em PRs para `main` e em cada atualização da branch. A sequência é instalação pelo lockfile, lint e tipos, testes e cobertura, segurança e build. Na `main`, seguem a publicação do artefato e a verificação da versão no ar.
 
-O [primeiro build](https://github.com/psFontana/preco-por-unidade/actions/runs/45944634989) validou a estrutura da SPA. No [PR do comparador](https://github.com/psFontana/preco-por-unidade/pull/2), o [teste de conversão falhou](https://github.com/psFontana/preco-por-unidade/actions/runs/45944764294) ao comparar unidades diferentes. A [execução seguinte](https://github.com/psFontana/preco-por-unidade/actions/runs/45944939940) aprovou a correção.
+### Testes e cobertura
 
+O Vitest cobre as conversões de massa e volume, preço por unidade, empate, arredondamento, campos vazios, valores inválidos e medidas incompatíveis. O teste de interface preenche as embalagens, confere os preços exibidos e altera os dados até obter empate. O provedor V8 exige ao menos **80% de linhas e 80% de ramificações** em `src/comparison.ts`. O relatório HTML também é anexado como artefato `cobertura`.
 
-## Qualidade e segurança
+### Segurança
 
-O ESLint e o TypeScript verificam o código antes da compilação. O Vitest coleta linhas e ramificações de `src/comparison.ts` com o provedor V8. O limite é 80% em cada métrica. O relatório HTML fica em `coverage/` e no artefato `cobertura` da execução.
+| Ferramenta | Verificação que interrompe o pipeline |
+| --- | --- |
+| npm audit | Vulnerabilidade alta ou crítica nas dependências de produção ou desenvolvimento |
+| Semgrep | Inserção direta de HTML ou avaliação dinâmica de código segundo as [regras SAST do projeto](.semgrep.yml) |
+| Gitleaks | Detecção de segredo no histórico Git obtido pelo workflow, com valores ocultos nos logs |
 
-O pipeline verifica vulnerabilidades altas ou críticas nas dependências de produção e desenvolvimento com `npm audit`. O Semgrep aplica as regras versionadas para inserção direta de HTML e avaliação de código em JavaScript/TypeScript. O Gitleaks percorre o histórico do Git com os valores sensíveis ocultos no log. Um achado nas regras selecionadas ou uma falha nos verificadores bloqueia o build. As Actions são referenciadas por SHA, e as imagens dos scanners por digest. A aplicação não usa chaves de API.
+As Actions são fixadas por SHA e as imagens dos scanners por digest. Os jobs de validação têm acesso de leitura. O deploy recebe permissão de publicação no Pages e identidade OIDC. A publicação da imagem usa o token temporário do GitHub com escrita em pacotes. A URL do monitor é uma configuração pública; a SPA dispensa credenciais.
 
-## Publicação e disponibilidade
+## Build e publicação
 
-O GitHub Actions gera `dist/` com o HTML, JavaScript, CSS e fontes. Os caminhos relativos do Vite funcionam sob `/preco-por-unidade/`. Na `main`, o job de publicação recebe o artefato `github-pages` da mesma execução e o entrega ao [site público](https://psfontana.github.io/preco-por-unidade/). Somente o job de deploy recebe as permissões de Pages e de identidade necessárias.
+O Vite gera `dist/index.html` e os arquivos JavaScript, CSS e fontes em `dist/assets/`. Os caminhos relativos permitem servir o site sob `/preco-por-unidade/` ou na raiz do contêiner. O build da `main` envia `dist/` como artefato `github-pages`. O job de deploy publica esse mesmo pacote no ambiente `github-pages`. [Build, artefatos e deploy](https://github.com/psFontana/preco-por-unidade/actions/runs/45945619113)
 
-O [monitoramento](https://github.com/psFontana/preco-por-unidade/actions/workflows/monitor.yml) roda após o deploy e também de forma independente a cada seis horas, aos 31 minutos das 05h, 11h, 17h e 23h UTC. A execução manual usa o mesmo teste Playwright. O Chromium abre a URL pública, exige HTTP 200, limpa o formulário e preenche o exemplo de 500 g e 1 kg. A verificação falha quando a página fica inacessível ou devolve um resultado incorreto, mesmo que o servidor responda HTTP 200. O log, a captura de tela e o trace permitem investigar as falhas.
+## Monitoramento
 
-Na reprodução local, `npm run preview` serve o build em outra janela. Com o navegador instalado por `npx playwright install chromium`, `npm run monitor` usa essa URL local. A variável pública `SITE_URL` seleciona outro endereço.
+O [workflow do monitor](.github/workflows/monitor.yml) roda após o deploy, por acionamento manual e a cada seis horas (02h31, 08h31, 14h31 e 20h31 no horário de Brasília). O Playwright abre a URL pública em Chromium, exige HTTP 200, limpa o formulário e digita a comparação de referência. O teste exige **R$ 16,00/kg**, **R$ 15,00/kg** e **Embalagem B compensa**. Se a página ou o JavaScript falhar, há uma nova tentativa. Uma falha persistente deixa a execução vermelha e disponibiliza a captura de tela e o trace.
 
-## Imagem Docker
+A reprodução local usa `npm run build` e `npm run preview`. Com o servidor em funcionamento, os comandos abaixo rodam o mesmo cenário. A variável `SITE_URL` permite apontar para a aplicação publicada. [Histórico das verificações agendadas](https://github.com/psFontana/preco-por-unidade/actions/workflows/monitor.yml?query=event%3Aschedule)
 
-O Nginx serve os arquivos de `dist/` na porta 8080 como usuário sem privilégios. A imagem base é fixada por digest. O build local usa o mesmo diretório da publicação estática.
+```sh
+npx playwright install chromium
+npm run monitor
+```
+
+## Docker
+
+O [Dockerfile](Dockerfile) empacota o conteúdo de `dist/` com Nginx sem privilégios na porta 8080. O [workflow da imagem](.github/workflows/docker.yml) inicia o contêiner e executa a comparação real. Em tags de versão presentes na `main`, o job de publicação recupera e envia ao GHCR a imagem que passou no teste.
 
 ```sh
 npm ci
@@ -49,4 +74,14 @@ docker build -t preco-por-unidade:local .
 docker run --rm -p 8080:8080 preco-por-unidade:local
 ```
 
-O site do contêiner fica em `http://localhost:8080/`. No Actions, o Playwright testa a imagem em execução. Para tags de versão da `main`, a etapa seguinte recupera a imagem testada e a publica no GitHub Container Registry com a mesma tag. Somente esse job recebe permissão de escrita em pacotes. O comando para a versão de entrega é `docker run --rm -p 8080:8080 ghcr.io/psfontana/preco-por-unidade:v1.0.0`.
+O endereço local é `http://localhost:8080/`. A referência de registro para a entrega é `ghcr.io/psfontana/preco-por-unidade:v1.0.0`.
+
+## Evidências
+
+| Etapa | Registro |
+| --- | --- |
+| Primeira integração | [PR inicial](https://github.com/psFontana/preco-por-unidade/pull/1) e [build aprovado](https://github.com/psFontana/preco-por-unidade/actions/runs/45944634989) |
+| Evolução de uma regra | [PR do comparador](https://github.com/psFontana/preco-por-unidade/pull/2), [teste de conversão falhando](https://github.com/psFontana/preco-por-unidade/actions/runs/45944764294) e [mesmo teste após a correção](https://github.com/psFontana/preco-por-unidade/actions/runs/45944939940) |
+| Qualidade e segurança | [Execução com cobertura, auditoria, SAST e secret scanning](https://github.com/psFontana/preco-por-unidade/actions/runs/45945312727) |
+| Entrega e operação | [Deploy e verificação pós-publicação](https://github.com/psFontana/preco-por-unidade/actions/runs/45945619113) e [monitor independente](https://github.com/psFontana/preco-por-unidade/actions/runs/45945830010) |
+| Contêiner | [Build da imagem e comparação em execução](https://github.com/psFontana/preco-por-unidade/actions/runs/45945758501) |
