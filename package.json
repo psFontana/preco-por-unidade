@@ -8,9 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "eslint src vite.config.ts --max-warnings=0",
+    "lint": "eslint src monitor vite.config.ts playwright.config.ts --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "monitor": "playwright test"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.0.0",
@@ -19,7 +20,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@testing-library/react": "^16.0.0",
+    "@types/node": "^22.20.7",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
