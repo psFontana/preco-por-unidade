@@ -1,0 +1,68 @@
+name: Imagem Docker
+on:
+  pull_request:
+    branches: [main]
+    paths: [Dockerfile, .dockerignore, .github/workflows/docker.yml]
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: Build e teste do contêiner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Origem da versão
+        if: github.ref_type == 'tag'
+        run: git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: docker build -t comparador:test .
+      - run: docker run --detach --name comparador -p 127.0.0.1:4173:8080 comparador:test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run monitor
+      - if: always()
+        run: docker rm --force comparador || true
+      - name: Exportação da imagem testada
+        if: github.ref_type == 'tag'
+        run: docker save comparador:test -o "$RUNNER_TEMP/imagem.tar"
+      - if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: imagem-testada
+          path: ${{ runner.temp }}/imagem.tar
+          retention-days: 1
+
+  publish:
+    name: Publicação no GHCR
+    needs: image
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: imagem-testada
+      - name: Envio da imagem versionada
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          docker load -i imagem.tar
+          image="ghcr.io/psfontana/preco-por-unidade:$VERSION"
+          docker tag comparador:test "$image"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker push "$image"
